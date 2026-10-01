@@ -1,21 +1,27 @@
-import urllib.request,json
-from .models import Quote
+import json
+import urllib.error
+import urllib.request
+
+QUOTES_URL = "https://zenquotes.io/api/random"
 
 
 def get_quotes():
-    """
-    :return: quotes results
-    """
+    """Return a random quote."""
 
-    get_quotes_url = 'http://quotes.stormconsultancy.co.uk/random.json'
+    try:
+        with urllib.request.urlopen(QUOTES_URL, timeout=5) as response:
+            data = json.loads(response.read())
 
-    with urllib.request.urlopen(get_quotes_url) as url:
-        get_quotes_data = url.read()
-        get_quotes_response = json.loads(get_quotes_data)
+        if not data:
+            return None
 
-        quotes_results = get_quotes_response
+        quote = data[0]
 
-        # if get_quotes_response['quote']:
-        #     quotes_results = get_quotes_response['quote']
+        return {
+            "quote": quote["q"],
+            "author": quote["a"],
+            "permalink": "https://zenquotes.io/",
+        }
 
-    return quotes_results
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError):
+        return None
