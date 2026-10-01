@@ -26,7 +26,6 @@ def index():
 
     title = "ThyVoice- Welcome!"
 
-    # blogs = Blog.query.all()
     blogs = db.session.query(Blog).order_by(Blog.blog_title.desc())
 
     my_quotes = get_quotes()
@@ -41,7 +40,7 @@ def index():
 def profile(uname):
 
     user = User.query.filter_by(username=uname).first()
-    user_id = current_user._get_current_object().id
+    user_id = current_user.id
     user_blogs = Blog.query.filter_by(user_id=user_id).all()
 
     if user is None:
@@ -52,7 +51,6 @@ def profile(uname):
         user=user,
         user_blogs=user_blogs,
         user_id=user_id,
-        blog=blog,
     )
 
 
@@ -83,10 +81,8 @@ def update_profile(uname):
 def update_blog(uname, id):
 
     user = User.query.filter_by(username=uname).first()
-    # user_id = current_user._get_current_object().id
-    # user_blog = Blog.query.filter_by(user_id=user_id).first()
 
-    blog = Blog.query.get(id)
+    blog = db.session.get(Blog, id)
 
     if blog is None:
         abort(404)
@@ -107,7 +103,6 @@ def update_blog(uname, id):
         "profile/update_blog.html",
         user=user,
         update_blog=update_blog,
-        delete_blog=delete_blog,
         blog=blog,
     )
 
@@ -118,7 +113,7 @@ def delete_blog(uname, id):
 
     user = User.query.filter_by(username=uname).first()
 
-    blog = Blog.query.get(id)
+    blog = db.session.get(Blog, id)
 
     if blog is None:
         abort(404)
@@ -151,7 +146,7 @@ def create():
         blog_category = blog_form.blog_category.data
         blog_description = blog_form.blog_description.data
         blog_content = blog_form.blog_content.data
-        user_id = current_user._get_current_object().id
+        user_id = current_user.id
 
         new_blog_dict = Blog(
             blog_title=blog_title,
@@ -167,15 +162,7 @@ def create():
 
     title = "Create Blog- ThyVoice!"
 
-    return render_template(
-        "create.html", title=title, blogs=blogs, blog_form=blog_form, blog=blog
-    )
-
-
-# @main.route('/create/<filename>/pic')
-# def uploaded_file(filename):
-#     return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'],filename)
-#
+    return render_template("create.html", title=title, blogs=blogs, blog_form=blog_form)
 
 
 @main.route("/subscribe", methods=["GET", "POST"])
@@ -203,22 +190,24 @@ def blog(id):
     :return: blog feed page + data
     """
 
-    blog = Blog.query.get(id)
+    blog = db.session.get(Blog, id)
     comment_form = CommentForm()
     comments = Comment.query.all()
-    comment = Comment.query.get(id)
+    comment = db.session.get(Comment, id)
 
-    user = current_user._get_current_object().username
-    # blog_id = Blog.query.get(id)
-    # blog = Blog.query.filter_by(blog_id=blog_id).first()
+    user = current_user.username
 
     if user is None:
         abort(404)
 
     if comment_form.validate_on_submit():
-        blog = Blog.query.get(id)
+        blog = db.session.get(Blog, id)
         comment_message = comment_form.comment.data
-        comment = Comment(comment_message=comment_message)
+        comment = Comment(
+            comment_message=comment_message,
+            blog_id=blog.id,
+            user_id=current_user.id,
+        )
 
         db.session.add(comment)
         db.session.commit()
@@ -241,8 +230,8 @@ def blog(id):
 @login_required
 def delete_comment(id):
 
-    comment = Comment.query.get(id)
-    blog = Blog.query.get(id)
+    comment = db.session.get(Comment, id)
+    blog = db.session.get(Blog, id)
 
     if comment is None:
         abort(404)
