@@ -186,25 +186,17 @@ def subscribe():
 @main.route("/blog/<int:id>", methods=["GET", "POST"])
 @login_required
 def blog(id):
-    """
-    :return: blog feed page + data
-    """
-
     blog = db.session.get(Blog, id)
-    comment_form = CommentForm()
-    comments = Comment.query.all()
-    comment = db.session.get(Comment, id)
 
-    user = current_user.username
-
-    if user is None:
+    if blog is None:
         abort(404)
 
+    comment_form = CommentForm()
+    comments = Comment.query.filter_by(blog_id=blog.id).all()
+
     if comment_form.validate_on_submit():
-        blog = db.session.get(Blog, id)
-        comment_message = comment_form.comment.data
         comment = Comment(
-            comment_message=comment_message,
+            comment_message=comment_form.comment.data,
             blog_id=blog.id,
             user_id=current_user.id,
         )
@@ -220,9 +212,8 @@ def blog(id):
         "blog.html",
         title=title,
         blog=blog,
-        comment=comment,
-        comment_form=comment_form,
         comments=comments,
+        comment_form=comment_form,
     )
 
 
