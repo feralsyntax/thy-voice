@@ -226,15 +226,16 @@ def blog(id):
     )
 
 
-@main.route("/blog/<int:id>/update", methods=["GET", "POST"])
+@main.route("/comment/<int:id>/delete", methods=["GET", "POST"])
 @login_required
 def delete_comment(id):
 
     comment = db.session.get(Comment, id)
-    blog = db.session.get(Blog, id)
 
     if comment is None:
         abort(404)
+        
+    blog = db.session.get(Blog, comment.blog_id)
 
     delete_comment = DeleteComment()
 
